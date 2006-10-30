@@ -20,7 +20,7 @@ public class Ciclo extends JPanel implements Runnable {
   public void GamePanel() {
 	setBackground(Color.white);                // white background
     setPreferredSize( new Dimension(PWIDTH, PHEIGHT));
-
+    //
     // create game components
     // ...
   }
