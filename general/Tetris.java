@@ -14,6 +14,7 @@ public class Tetris {
 		
 		
 		
+		
 		ciclo.stopGame();
 		
 
