@@ -1,13 +1,17 @@
 package general;
 
 import java.awt.event.WindowEvent;
+
 import javax.swing.JFrame;
 
+public final class Juego extends JFrame {
+	
+    private static final long serialVersionUID = 1L;
+    private Ciclo ciclo;
 
-public class Tetris extends JFrame {
-
-	public Tetris(long l) {
-		
+	
+    public Juego(long l) {
+    	this.ciclo = new Ciclo(this, l);
 	}	
 
 	public static void main(String args[])
@@ -19,24 +23,25 @@ public class Tetris extends JFrame {
       long period = (long) 1000.0/fps;
       System.out.println("fps: " + fps + "; period: " +period+ " ms");
 
-      new Tetris(period*1000000L);    // ms --> nanosecs
+      new Juego(period*1000000L);    // ms --> nanosecs
     }
 
 	public void setTimeSpent(long t)
     {  jtfTime.setText("Time Spent: " + t + " secs"); }
 	
 	public void windowActivated(WindowEvent e)
-    { wp.resumeGame( );  }
+    { ciclo.resumeGame(); }
 
     public void windowDeactivated(WindowEvent e)
-    {  wp.pauseGame( );  }
+    {  ciclo.pauseGame();  }
 
     public void windowDeiconified(WindowEvent e)
-    {  wp.resumeGame( );  }
+    {  ciclo.resumeGame();  }
 
     public void windowIconified(WindowEvent e)
-    {  wp.pauseGame( ); }
+    {  ciclo.pauseGame(); }
 
     public void windowClosing(WindowEvent e)
-   {  wp.stopGame( );  }
+   {  ciclo.stopGame();  }
+
 }
