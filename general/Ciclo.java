@@ -11,7 +11,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
+import java.text.DecimalFormat;
 import javax.swing.JPanel;
 
 
@@ -35,7 +35,9 @@ public class Ciclo extends JPanel implements Runnable {
   private FontMetrics metrics;
   private Juego juego;
   private String gameOverString = "Perdiste looser!!!!!";
-    
+   
+  private DecimalFormat df = new DecimalFormat("0.##");  // 2 dp
+  private DecimalFormat timedf = new DecimalFormat("0.####");  // 4 dp
   
   public Ciclo(Juego j, long period) {
     this.juego = j;
@@ -289,7 +291,7 @@ public class Ciclo extends JPanel implements Runnable {
 	  totalElapsedTime += realElapsedTime;
 	
 	  double timingError = (double)
-	       (realElapsedTime-statsInterval) / statsInterval)*100.0;
+	       (realElapsedTime-statsInterval) / statsInterval*100.0;
 	
 	  totalFramesSkipped += framesSkipped;
 	
