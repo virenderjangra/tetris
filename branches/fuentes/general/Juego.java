@@ -3,11 +3,16 @@ package general;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JFrame;
+import javax.swing.JTextField;
 
 public final class Juego extends JFrame {
 	
-    private static final long serialVersionUID = 1L;
+    
+	private static final long serialVersionUID = 1L;
     private Ciclo ciclo;
+    private static int DEFAULT_FPS = 80;    
+    private JTextField jtfBox;   // displays no.of boxes used
+    private JTextField jtfTime;  // displays time spent in game
 
 	
     public Juego(long l) {
@@ -27,7 +32,9 @@ public final class Juego extends JFrame {
     }
 
 	public void setTimeSpent(long t)
-    {  jtfTime.setText("Time Spent: " + t + " secs"); }
+    {  		
+		//jtfTime.setText("Time Spent: " + t + " secs");
+    }
 	
 	public void windowActivated(WindowEvent e)
     { ciclo.resumeGame(); }
