@@ -66,7 +66,10 @@ public class Ciclo extends JPanel implements Runnable {
   private Image dbImage = null;
   
   public Ciclo(Juego j, long period) {
-    this.juego = j;
+	
+	this.juego = j;
+	this.period = period;
+	
 	setBackground(Color.white);
     setPreferredSize(new Dimension(PWIDTH, PHEIGHT));
 
