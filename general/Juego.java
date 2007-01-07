@@ -11,7 +11,7 @@ import javax.swing.JTextField;
 
 public class Juego extends JFrame implements WindowListener {
 	
-	private static int DEFAULT_FPS = 80;
+	private static int DEFAULT_FPS = 40;
 	
 	//private static final long serialVersionUID = 1L;
     

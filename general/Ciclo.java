@@ -2,6 +2,7 @@ package general;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import javax.swing.*;
 import java.text.DecimalFormat;
 
@@ -45,11 +46,20 @@ public class Ciclo extends JPanel implements Runnable {
   private DecimalFormat df = new DecimalFormat("0.##");  // 2 dp
   private DecimalFormat timedf = new DecimalFormat("0.####");  // 4 dp  
 
+  //image and clip loader information files
+  private static final String IMS_INFO = "imsInfo.txt";
+  private static final String SNDS_FILE = "clipsInfo.txt";
+  
   private Thread animator;                     // for the animation
   private volatile boolean running = false;    // stops the animation  
   private volatile boolean isPaused = false;   // for game pause
       
   private long period;
+  
+  private ClipsLoader clipsLoader;
+  
+  private BatSprite bat;        // the sprites
+  
   
   /* el juego*/
   private Juego juego;
@@ -75,11 +85,21 @@ public class Ciclo extends JPanel implements Runnable {
 
     setFocusable(true);
     requestFocus();    // JPanel now receives key events
-    readyForTermination();
+
+    //TODO: por ahora este método no lo uso mas porque queda
+    //lo mismo implementado en processKey()
+    //readyForTermination();
 
     // create game components
     // ...
 
+    // listen for key presses
+    addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e)
+      {processKey(e);}
+    });   
+    
+    
     // listen for mouse presses
     addMouseListener(new MouseAdapter() {
 	  public void mousePressed(MouseEvent e) 
@@ -90,7 +110,14 @@ public class Ciclo extends JPanel implements Runnable {
     font = new Font("SansSerif", Font.BOLD, 24);
     metrics = this.getFontMetrics(font);    
     
+    ImagesLoader imsLoader = new ImagesLoader(IMS_INFO);
+    //bgImage = ...
+    clipsLoader = new ClipsLoader(SNDS_FILE);
     
+    // create game sprites
+    bat = new BatSprite(PWIDTH, PHEIGHT, imsLoader,(int)(period/1000000L));   		
+    		
+
     // initialise timing elements
     fpsStore = new double[NUM_FPS];
     upsStore = new double[NUM_FPS];
@@ -100,21 +127,43 @@ public class Ciclo extends JPanel implements Runnable {
     }
   }
   
-  private void readyForTermination() {
-	  addKeyListener( new KeyAdapter(){
-      // listen for esc, q, end, ctrl-c
-      public void keyPressed(KeyEvent e){ 
-    	int keyCode = e.getKeyCode( );
-        if ((keyCode == KeyEvent.VK_ESCAPE) ||
-            (keyCode == KeyEvent.VK_Q) ||
-            (keyCode == KeyEvent.VK_END) ||
-            ((keyCode == KeyEvent.VK_C) && e.isControlDown( )) ) {
-          running = false;
-        }
-       }
-     });
-  }  
   
+
+  private void readyForTermination() {
+	addKeyListener( new KeyAdapter(){
+    // listen for esc, q, end, ctrl-c
+    public void keyPressed(KeyEvent e){ 
+      int keyCode = e.getKeyCode( );
+      if ((keyCode == KeyEvent.VK_ESCAPE) ||
+          (keyCode == KeyEvent.VK_Q) ||
+          (keyCode == KeyEvent.VK_END) ||
+          ((keyCode == KeyEvent.VK_C) && e.isControlDown( )) ) {
+        running = false;
+        }
+      }
+    });
+  }
+  
+  private void processKey(KeyEvent e) {
+    int keyCode = e.getKeyCode();
+    
+    // termination keys
+    if ((keyCode == KeyEvent.VK_ESCAPE) ||
+        (keyCode == KeyEvent.VK_Q) ||
+        (keyCode == KeyEvent.VK_END) ||
+        ((keyCode == KeyEvent.VK_C) && e.isControlDown( )) )
+      running = false;
+    
+    // game-play keys
+    if (!isPaused && !gameOver) {
+      if (keyCode == KeyEvent.VK_LEFT)
+    	  bat.moveLeft();
+      else if (keyCode == KeyEvent.VK_RIGHT)
+    	  bat.moveRight();
+      else if (keyCode == KeyEvent.VK_DOWN)
+    	  bat.stayStill();    
+    }	
+  }
   
   /* Wait for the JPanel to be added to the
   JFrame/JApplet before starting. */
@@ -149,7 +198,7 @@ public class Ciclo extends JPanel implements Runnable {
   //TODO: compleatar este metodo
   // is (x,y) important to the game?
   private void testPress(int x, int y) {
-    if (!gameOver) {
+    if (!isPaused && !gameOver) {
       // do something
     }
   }
@@ -218,6 +267,7 @@ public class Ciclo extends JPanel implements Runnable {
   private void gameUpdate() { 
 	  if (!isPaused && !gameOver) {
     	// update game state ...
+		bat.updateSprite();
 	}
   }
   
@@ -241,6 +291,7 @@ public class Ciclo extends JPanel implements Runnable {
     // draw game elements
     dbg.setColor(Color.blue);
     dbg.setFont(font);
+    bat.drawSprite(dbg);
     
 
     //  report average FPS and UPS at top left
@@ -342,71 +393,6 @@ public class Ciclo extends JPanel implements Runnable {
     System.out.println("Average UPS: " + df.format(averageUPS));
     System.out.println("Time Spent: " + timeSpentInGame + " secs");    
   }
-  
-  /* Repeatedly update, render, sleep */
-  public void run1() {
-    running = true;
-    while(running) {
-      gameUpdate();
-      gameRender();
-      repaint();
-
-      try {
-        Thread.sleep(20);  // sleep a bit
-      }
-      catch(final InterruptedException ex){}
-    }
-    System.exit(0); 
-  }
-  
-  /* Active Rendering */
-  public void run2(){
-    running = true;
-    while(running) {
-      gameUpdate();
-      gameRender();
-      paintScreen();
-
-      try {
-        Thread.sleep(20);  // sleep a bit
-      }
-      catch(InterruptedException ex){}
-    }
-    System.exit(0);
-  }
-  
-    
-  public void run3() {
-  /* Repeatedly: update, render, sleep so loop takes close
-     to period ms */
-  
-    long beforeTime, timeDiff, sleepTime;
-    beforeTime = System.currentTimeMillis();
-
-    running = true;
-    while(running) {
-      gameUpdate();
-      gameRender();
-      paintScreen();
-
-      timeDiff = System.currentTimeMillis( ) - beforeTime;
-      sleepTime = period - timeDiff;   // time left in this loop
-
-      if (sleepTime <= 0)  // update/render took longer than period
-        sleepTime = 5;    // sleep a bit anyway
-
-      try {
-        Thread.sleep(sleepTime);  // in ms
-      }
-      catch(InterruptedException ex){}
-
-      beforeTime = System.currentTimeMillis( );
-    }
-
-    System.exit(0);
-  }
-  
-  
   
  
   /*
