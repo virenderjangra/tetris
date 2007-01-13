@@ -12,21 +12,21 @@ import javax.swing.JTextField;
 public class Juego extends JFrame implements WindowListener {
 	
 	private static int DEFAULT_FPS = 40;
-	
+	private static boolean DEBUG_MODE = false;	
 	//private static final long serialVersionUID = 1L;
     
-	private Ciclo ciclo;        
-    private JTextField jtfBox;   // displays no.of boxes used
-    private JTextField jtfTime;  // displays time spent in game
+  private Ciclo ciclo;        
+  private JTextField jtfBox;   // displays no.of boxes used
+  private JTextField jtfTime;  // displays time spent in game  
 	
-    public Juego(long period) {
-      super("Eze Test");      
-      makeGUI(period);
-      
-      addWindowListener( this );
-      pack();
-      setResizable(false);
-      setVisible(true);
+  public Juego(long period) {
+    super("Eze Test");
+    makeGUI(period);
+    
+    addWindowListener( this );
+    pack();
+    setResizable(false);
+    setVisible(true);
 	}
     
     private void makeGUI(long period)
@@ -75,16 +75,20 @@ public class Juego extends JFrame implements WindowListener {
     public void windowOpened(WindowEvent e) {}
     
     
-	public static void main(String args[])
-    {
-      int fps = DEFAULT_FPS;
-      if (args.length != 0)
-        fps = Integer.parseInt(args[0]);
+	public static void main(String args[]) {
+    int fps = DEFAULT_FPS;
+    if (args.length != 0)
+      fps = Integer.parseInt(args[0]);
 
-      long period = (long) 1000.0/fps;
+    long period = (long) 1000.0/fps;
+    
+    if (Juego.isIndDebugMode())
       System.out.println("fps: " + fps + "; period: " +period+ " ms");
 
-      new Juego(period*1000000L);    // ms --> nanosecs
-    }
-
+    new Juego(period*1000000L);    // ms --> nanosecs
+  }    
+  
+  public static boolean isIndDebugMode(){
+    return DEBUG_MODE;
+  }
 }

@@ -62,7 +62,7 @@ public class Ciclo extends JPanel implements Runnable {
   
   
   /* el juego*/
-  private Juego juego;
+  private Juego juego;  
   //TODO: ver porque no usa el gameOverString 
   private String gameOverString = "Perdiste looser!!!!!";
   
@@ -75,11 +75,12 @@ public class Ciclo extends JPanel implements Runnable {
   private Graphics dbg;
   private Image dbImage = null;
   
+  
   public Ciclo(Juego j, long period) {
 	
 	this.juego = j;
-	this.period = period;
-	
+	this.period = period;  
+	  
 	setBackground(Color.white);
     setPreferredSize(new Dimension(PWIDTH, PHEIGHT));
 
@@ -115,16 +116,17 @@ public class Ciclo extends JPanel implements Runnable {
     clipsLoader = new ClipsLoader(SNDS_FILE);
     
     // create game sprites
-    bat = new BatSprite(PWIDTH, PHEIGHT, imsLoader,(int)(period/1000000L));   		
+    bat = new BatSprite(PWIDTH, PHEIGHT, imsLoader,(int)(period/1000000L));  		
     		
-
     // initialise timing elements
-    fpsStore = new double[NUM_FPS];
-    upsStore = new double[NUM_FPS];
-    for (int i=0; i < NUM_FPS; i++) {
-      fpsStore[i] = 0.0;
-      upsStore[i] = 0.0;
-    }
+    if (Juego.isIndDebugMode()) {      
+      fpsStore = new double[NUM_FPS];
+      upsStore = new double[NUM_FPS];
+      for (int i=0; i < NUM_FPS; i++) {
+        fpsStore[i] = 0.0;
+        upsStore[i] = 0.0;
+      }
+  	}	
   }
   
   
@@ -236,8 +238,8 @@ public class Ciclo extends JPanel implements Runnable {
               (System.nanoTime() - afterTime) - sleepTime;
       }
       else {    // sleepTime <= 0; frame took longer than the period
-    	excess -= sleepTime;  // store excess time value
-    	overSleepTime = 0L;
+        excess -= sleepTime;  // store excess time value
+        overSleepTime = 0L;
 
         if (++noDelays >= NO_DELAYS_PER_YIELD) {
           Thread.yield();   // give another thread a chance to run
@@ -250,30 +252,33 @@ public class Ciclo extends JPanel implements Runnable {
       without rendering it, to get the updates/sec nearer to
       the required FPS. */
       int skips = 0;
-	  while((excess > period) && (skips < MAX_FRAME_SKIPS)) {
-	    excess -= period;
-	    gameUpdate( );      // update state but don't render
-	    skips++;
-	  }
-	  
-	  framesSkipped += skips;
-      storeStats();
+  	  while((excess > period) && (skips < MAX_FRAME_SKIPS)) {
+  	    excess -= period;
+  	    gameUpdate( );      // update state but don't render
+  	    skips++;
+  	  }	  
+  	  framesSkipped += skips;
+      
+      if (Juego.isIndDebugMode())
+        storeStats();
     }
     
-    printStats();
+    if (Juego.isIndDebugMode())
+      printStats();
+    
     System.exit(0);
   }
   
   private void gameUpdate() { 
-	  if (!isPaused && !gameOver) {
-    	// update game state ...
-		bat.updateSprite();
-	}
+    if (!isPaused && !gameOver) {
+      // update game state ...
+      bat.updateSprite();
+    }
   }
   
   /* draw the current frame to an image buffer */
   private void gameRender() {
-	// create the buffer
+    // create the buffer
     if (dbImage == null){  
     	
       dbImage = createImage(PWIDTH, PHEIGHT);
@@ -293,13 +298,11 @@ public class Ciclo extends JPanel implements Runnable {
     dbg.setFont(font);
     bat.drawSprite(dbg);
     
-
     //  report average FPS and UPS at top left
-    dbg.drawString("Average FPS/UPS: " + df.format(averageFPS) +
-             ", " + df.format(averageUPS), 20, 25);
+    if (Juego.isIndDebugMode())
+      dbg.drawString("Average FPS/UPS: " + df.format(averageFPS) + ", " + df.format(averageUPS), 20, 25); 
 
     dbg.setColor(Color.black);
-
     
     if (gameOver)
       gameOverMessage(dbg);
@@ -325,66 +328,65 @@ public class Ciclo extends JPanel implements Runnable {
   }
   
   private void storeStats() {
-	frameCount++;
-	statsInterval += period;
+    frameCount++;
+    statsInterval += period;
 	
-	if (statsInterval >= MAX_STATS_INTERVAL) {
-	  long timeNow = System.nanoTime();
-	  timeSpentInGame = (int) ((timeNow - gameStartTime)/1000000000L);  // ns-->secs
-	  this.juego.setTimeSpent(timeSpentInGame);
+    if (statsInterval >= MAX_STATS_INTERVAL) {
+      long timeNow = System.nanoTime();
+      timeSpentInGame = (int) ((timeNow - gameStartTime)/1000000000L);  // ns-->secs
+      this.juego.setTimeSpent(timeSpentInGame);
 	
-	  long realElapsedTime = timeNow - prevStatsTime;
-	       // time since last stats collection
-	  totalElapsedTime += realElapsedTime;
+      long realElapsedTime = timeNow - prevStatsTime;
+	    // time since last stats collection
+      totalElapsedTime += realElapsedTime;
 	
-	  double timingError = (double)
-	       (realElapsedTime-statsInterval) / statsInterval*100.0;
+      //double timingError = (double)(realElapsedTime-statsInterval) / statsInterval*100.0;
 	
-	  totalFramesSkipped += framesSkipped;
+      totalFramesSkipped += framesSkipped;
 	
-	  double actualFPS = 0;     // calculate the latest FPS and UPS
-	  double actualUPS = 0;
-	  if (totalElapsedTime > 0) {
-	    actualFPS = (((double)frameCount / totalElapsedTime) *
+      double actualFPS = 0;     // calculate the latest FPS and UPS
+      double actualUPS = 0;
+      if (totalElapsedTime > 0) {
+        actualFPS = (((double)frameCount / totalElapsedTime) *
 	                                             1000000000L);
-	    actualUPS = (((double)(frameCount + totalFramesSkipped) /
+        actualUPS = (((double)(frameCount + totalFramesSkipped) /
 	                 totalElapsedTime) * 1000000000L);
-	  }
+      }
 	
-	  // store the latest FPS and UPS
-	  fpsStore[ (int)statsCount%NUM_FPS ] = actualFPS;
-	  upsStore[ (int)statsCount%NUM_FPS ] = actualUPS;
-	  statsCount = statsCount+1;
+  	  // store the latest FPS and UPS
+  	  fpsStore[ (int)statsCount%NUM_FPS ] = actualFPS;
+  	  upsStore[ (int)statsCount%NUM_FPS ] = actualUPS;
+  	  statsCount = statsCount+1;
 	
-	  double totalFPS = 0.0;     // total the stored FPSs and UPSs
-	  double totalUPS = 0.0;
-	  for (int i=0; i < NUM_FPS; i++) {
-	    totalFPS += fpsStore[i];
-	    totalUPS += upsStore[i];
-	  }
+  	  double totalFPS = 0.0;     // total the stored FPSs and UPSs
+  	  double totalUPS = 0.0;
+  	  for (int i=0; i < NUM_FPS; i++) {
+  	    totalFPS += fpsStore[i];
+  	    totalUPS += upsStore[i];
+  	  }
 	
-	  if (statsCount < NUM_FPS) { // obtain the average FPS and UPS
-	    averageFPS = totalFPS/statsCount;
-	    averageUPS = totalUPS/statsCount;
-	  }
-	  else {
-	    averageFPS = totalFPS/NUM_FPS;
-	    averageUPS = totalUPS/NUM_FPS;
-	  }
-	/*
-	 System.out.println(
-	   timedf.format( (double) statsInterval/1000000000L) + " " +
-	   timedf.format((double) realElapsedTime/1000000000L)+"s "+
-	   df.format(timingError) + "% " +
-	   frameCount + "c " +
-	   framesSkipped + "/" + totalFramesSkipped + " skip; " +
-	   df.format(actualFPS) + " " + df.format(averageFPS)+" afps; " +
-	   df.format(actualUPS) + " " + df.format(averageUPS)+" aups" );
-	*/
-	  framesSkipped = 0;
-	  prevStatsTime = timeNow;
-	  statsInterval = 0L;   // reset
-	}  
+  	  if (statsCount < NUM_FPS) { // obtain the average FPS and UPS
+  	    averageFPS = totalFPS/statsCount;
+  	    averageUPS = totalUPS/statsCount;
+  	  }
+  	  else {
+  	    averageFPS = totalFPS/NUM_FPS;
+  	    averageUPS = totalUPS/NUM_FPS;
+  	  }
+  	/*
+  	 System.out.println(
+  	   timedf.format( (double) statsInterval/1000000000L) + " " +
+  	   timedf.format((double) realElapsedTime/1000000000L)+"s "+
+  	   df.format(timingError) + "% " +
+  	   frameCount + "c " +
+  	   framesSkipped + "/" + totalFramesSkipped + " skip; " +
+  	   df.format(actualFPS) + " " + df.format(averageFPS)+" afps; " +
+  	   df.format(actualUPS) + " " + df.format(averageUPS)+" aups" );
+  	*/
+  	  framesSkipped = 0;
+  	  prevStatsTime = timeNow;
+  	  statsInterval = 0L;   // reset
+    }  
   }
   
   private void printStats() {
@@ -394,7 +396,7 @@ public class Ciclo extends JPanel implements Runnable {
     System.out.println("Time Spent: " + timeSpentInGame + " secs");    
   }
   
- 
+  
   /*
   public void paintComponent(Graphics g)
   {
@@ -402,7 +404,6 @@ public class Ciclo extends JPanel implements Runnable {
     if (dbImage != null)
       g.drawImage(dbImage, 0, 0, null);
   }
-  */  
-  
+  */
   //private static final long serialVersionUID = 1L;
 }
